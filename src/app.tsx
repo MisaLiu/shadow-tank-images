@@ -123,10 +123,6 @@ export function App() {
 
       <footer class="app-footer">
         <span>处理引擎：{describeWorkerMode()}</span>
-        <span>
-          合并参数 aWhiteOpacity / bBlackOpacity / offset 需与拆分参数
-          imgABrightness / imgBBrightness / offset 成对相等才能无损还原
-        </span>
       </footer>
     </div>
   );

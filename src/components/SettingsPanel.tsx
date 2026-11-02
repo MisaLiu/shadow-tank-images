@@ -81,7 +81,7 @@ export function SettingsPanel({
       <section class="panel">
         <div class="panel-head">
           <h2>
-            合并设置 <code>mergeImagesToCheckerboard</code>
+            合并设置
           </h2>
           <button
             type="button"
@@ -126,7 +126,7 @@ export function SettingsPanel({
     <section class="panel">
       <div class="panel-head">
         <h2>
-          拆分设置 <code>splitMergedImages</code>
+          拆分设置
         </h2>
         <div class="panel-actions">
           <button type="button" class="btn btn-ghost" onClick={onSyncFromMerge}>
