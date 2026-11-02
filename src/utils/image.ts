@@ -140,18 +140,18 @@ const createImageDataFromFloat = (
 };
 
 export const splitImagesFromCanvasCtx = (
-  canvasCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  imageData: Uint8ClampedArray,
+  width: number, height: number,
   imgABrightness = 0.25,
   imgBBrightness = 0.835
 ) => {
-  const canvas = canvasCtx.canvas;
+  const pixelsTotal = width * height;
 
-  const imageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
-  const imageWidth = imageData.width;
-  const imageHeight = imageData.height;
-  const pixelData = imageData.data;
-  const pixelsTotal = imageWidth * imageHeight;
-  const pixelMask = createCheckerMask(imageWidth, imageHeight);
+  if (imageData.length !== pixelsTotal * 4) {
+    throw new RangeError("Invalid image data dimensions");
+  }
+
+  const pixelMask = createCheckerMask(width, height);
 
   const pixelsImgA = new Float32Array(pixelsTotal * 3);
   const pixelsImgB = new Float32Array(pixelsTotal * 3);
@@ -163,9 +163,9 @@ export const splitImagesFromCanvasCtx = (
     const src = i * 4;
     const dst = i * 3;
 
-    const r = pixelData[src];
-    const g = pixelData[src + 1];
-    const b = pixelData[src + 2];
+    const r = imageData[src];
+    const g = imageData[src + 1];
+    const b = imageData[src + 2];
 
     if (pixelMask[i] === 0) {
       pixelsImgA[dst] = (r - imgABrightness * 255) / opacityKeepImgA;
@@ -179,19 +179,73 @@ export const splitImagesFromCanvasCtx = (
   }
 
   const imageDataA = createImageDataFromFloat(
-    interpolateCheckerboard(pixelsImgA, pixelMask, imageWidth, imageHeight, 0),
-    imageWidth,
-    imageHeight
+    interpolateCheckerboard(pixelsImgA, pixelMask, width, height, 0),
+    width,
+    height
   );
 
   const imageDataB = createImageDataFromFloat(
-    interpolateCheckerboard(pixelsImgB, pixelMask, imageWidth, imageHeight, 1),
-    imageWidth,
-    imageHeight
+    interpolateCheckerboard(pixelsImgB, pixelMask, width, height, 1),
+    width,
+    height
   );
   
   return ({
     a: imageDataA,
     b: imageDataB,
   });
+};
+
+export const mergeImagesToCheckerboard = (
+  imageA: Uint8ClampedArray,
+  imageB: Uint8ClampedArray,
+  width: number,
+  height: number,
+  aWhiteOpacity = 0.25,
+  bBlackOpacity = 0.835,
+  offset = 0,
+): ImageData => {
+  const pixelsTotal = width * height;
+  const expectedLength = pixelsTotal * 4;
+
+  if (
+    imageA.length !== expectedLength ||
+    imageB.length !== expectedLength
+  ) {
+    throw new RangeError("Invalid image data dimensions");
+  }
+
+  if (
+    aWhiteOpacity < 0 || aWhiteOpacity > 1 ||
+    bBlackOpacity < 0 || bBlackOpacity > 1
+  ) {
+    throw new RangeError("Invalid opacity");
+  }
+
+  const mask = createCheckerMask(width, height, offset);
+
+  const result = new Uint8ClampedArray(expectedLength);
+
+  const keepA = 1 - aWhiteOpacity;
+  const keepB = 1 - bBlackOpacity;
+
+  const whiteOffset = aWhiteOpacity * 255;
+
+  for (let i = 0; i < pixelsTotal; i++) {
+    const index = i * 4;
+
+    if (mask[i] === 0) {
+      result[index] = imageA[index] * keepA + whiteOffset;
+      result[index + 1] = imageA[index + 1] * keepA + whiteOffset;
+      result[index + 2] = imageA[index + 2] * keepA + whiteOffset;
+    } else {
+      result[index] = imageB[index] * keepB;
+      result[index + 1] = imageB[index + 1] * keepB;
+      result[index + 2] = imageB[index + 2] * keepB;
+    }
+
+    result[index + 3] = 255;
+  }
+
+  return new ImageData(result, width, height);
 };
