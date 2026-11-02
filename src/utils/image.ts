@@ -178,16 +178,20 @@ export const splitImagesFromCanvasCtx = (
     }
   }
 
-  // TODO: Debug, dont use in production
+  const imageDataA = createImageDataFromFloat(
+    interpolateCheckerboard(pixelsImgA, pixelMask, imageWidth, imageHeight, 0),
+    imageWidth,
+    imageHeight
+  );
+
   const imageDataB = createImageDataFromFloat(
     interpolateCheckerboard(pixelsImgB, pixelMask, imageWidth, imageHeight, 1),
     imageWidth,
     imageHeight
   );
-  createImageBitmap(imageDataB)
-    .then((bitmap) => {
-      canvasCtx.drawImage(bitmap, 0, 0);
-      bitmap.close();
-    })
-    .catch(console.error);
+  
+  return ({
+    a: imageDataA,
+    b: imageDataB,
+  });
 };
