@@ -1,104 +1,133 @@
-import { useState } from 'preact/hooks'
-import heroImg from './assets/hero.png'
-import preactLogo from './assets/preact.svg'
-import viteLogo from './assets/vite.svg'
-import './app.css'
+import { useState } from 'preact/hooks';
+import { ErrorBar } from './components/ErrorBar';
+import { MergeView } from './components/MergeView';
+import { SettingsPanel } from './components/SettingsPanel';
+import { SplitView } from './components/SplitView';
+import { useImageProcessing } from './hooks/useImageProcessing';
+import { describeWorkerMode } from './utils/imageClient';
+import {
+  DEFAULT_MERGE_SETTINGS,
+  DEFAULT_SPLIT_SETTINGS,
+} from './utils/pipeline';
+import type { MergeSettings, SplitSettings } from './utils/pipeline';
+import type { Mode } from './types';
 
 export function App() {
-  const [count, setCount] = useState(0)
+  const [mode, setMode] = useState<Mode>('merge');
+  const [mergeSettings, setMergeSettings] =
+    useState<MergeSettings>(DEFAULT_MERGE_SETTINGS);
+  const [splitSettings, setSplitSettings] =
+    useState<SplitSettings>(DEFAULT_SPLIT_SETTINGS);
+
+  const {
+    fileA,
+    fileB,
+    sourceFile,
+    selectFileA,
+    selectFileB,
+    selectSource,
+    mergedBitmap,
+    splitResult,
+    busy,
+    error,
+    reportError,
+    clearError,
+    forceRun,
+  } = useImageProcessing({ mode, mergeSettings, splitSettings });
+
+  const updateMergeSettings = (patch: Partial<MergeSettings>) =>
+    setMergeSettings((previous) => ({ ...previous, ...patch }));
+
+  const updateSplitSettings = (patch: Partial<SplitSettings>) =>
+    setSplitSettings((previous) => ({ ...previous, ...patch }));
+
+  const syncSplitFromMerge = () =>
+    setSplitSettings({
+      imgABrightness: mergeSettings.aWhiteOpacity,
+      imgBBrightness: mergeSettings.bBlackOpacity,
+      offset: mergeSettings.offset,
+    });
+
+  const switchMode = (next: Mode) => {
+    if (next === mode) return;
+    setMode(next);
+    clearError();
+  };
 
   return (
-    <>
-      <section id="center">
-        <div class="hero">
-          <img src={heroImg} class="base" width="170" height="179" alt="" />
-          <img src={preactLogo} class="framework" alt="Preact logo" />
-          <img src={viteLogo} class="vite" alt="Vite logo" />
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <h1>Shadow Tank Images</h1>
+          <p class="subtitle">棋盘格隐图 · 合并与拆分</p>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/app.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          class="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div class="ticks"></div>
+        <nav class="tabs" aria-label="模式切换">
+          {(
+            [
+              ['merge', '合并'],
+              ['split', '拆分'],
+            ] as [Mode, string][]
+          ).map(([value, label]) => (
+            <button
+              type="button"
+              class={['tab', mode === value ? 'is-active' : '']
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => switchMode(value)}
+            >
+              {label}
+            </button>
+          ))}
+          {busy && (
+            <span class="busy">
+              <span class="spinner" aria-hidden="true" />
+              处理中…
+            </span>
+          )}
+        </nav>
+      </header>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg class="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img class="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://preactjs.com/" target="_blank">
-                <img class="button-icon" src={preactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg class="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {error && <ErrorBar message={error} onClose={clearError} />}
 
-      <div class="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <SettingsPanel
+        mode={mode}
+        mergeSettings={mergeSettings}
+        splitSettings={splitSettings}
+        onMergeChange={updateMergeSettings}
+        onSplitChange={updateSplitSettings}
+        onSyncFromMerge={syncSplitFromMerge}
+      />
+
+      {mode === 'merge' ? (
+        <MergeView
+          fileA={fileA}
+          fileB={fileB}
+          mergedBitmap={mergedBitmap}
+          busy={busy}
+          onSelectA={selectFileA}
+          onSelectB={selectFileB}
+          onForceRun={forceRun}
+          onError={reportError}
+        />
+      ) : (
+        <SplitView
+          sourceFile={sourceFile}
+          splitResult={splitResult}
+          busy={busy}
+          onSelectSource={selectSource}
+          onForceRun={forceRun}
+          onError={reportError}
+        />
+      )}
+
+      <footer class="app-footer">
+        <span>处理引擎：{describeWorkerMode()}</span>
+        <span>
+          合并参数 aWhiteOpacity / bBlackOpacity / offset 需与拆分参数
+          imgABrightness / imgBBrightness / offset 成对相等才能无损还原
+        </span>
+      </footer>
+    </div>
+  );
 }

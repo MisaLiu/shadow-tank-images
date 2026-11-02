@@ -139,11 +139,12 @@ const createImageDataFromFloat = (
   return new ImageData(rgba, width, height);
 };
 
-export const splitImagesFromCanvasCtx = (
+export const splitMergedImages = (
   imageData: Uint8ClampedArray,
   width: number, height: number,
   imgABrightness = 0.25,
-  imgBBrightness = 0.835
+  imgBBrightness = 0.835,
+  offset = 0,
 ) => {
   const pixelsTotal = width * height;
 
@@ -151,7 +152,7 @@ export const splitImagesFromCanvasCtx = (
     throw new RangeError("Invalid image data dimensions");
   }
 
-  const pixelMask = createCheckerMask(width, height);
+  const pixelMask = createCheckerMask(width, height, offset);
 
   const pixelsImgA = new Float32Array(pixelsTotal * 3);
   const pixelsImgB = new Float32Array(pixelsTotal * 3);
