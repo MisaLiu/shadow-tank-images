@@ -1,5 +1,5 @@
 import { useObjectUrl } from '../hooks/useObjectUrl';
-import { downloadBlob, previewBlob } from '../utils/blob';
+import { downloadUrl, previewUrl } from '../utils/blob';
 import { UploadZone } from './UploadZone';
 
 type Props = {
@@ -26,14 +26,14 @@ export function MergeView({
   const mergedUrl = useObjectUrl(mergedBlob);
 
   const save = () => {
-    if (!mergedBlob) return;
-    downloadBlob(mergedBlob, `merged-${Date.now()}.png`);
+    if (!mergedUrl) return;
+    downloadUrl(mergedUrl, `merged-${Date.now()}.png`);
   };
 
   const preview = () => {
-    if (!mergedBlob) return;
+    if (!mergedUrl) return;
     try {
-      previewBlob(mergedBlob);
+      previewUrl(mergedUrl);
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -77,7 +77,7 @@ export function MergeView({
             <button
               type="button"
               class="btn"
-              disabled={!mergedBlob || busy}
+              disabled={!mergedUrl || busy}
               onClick={preview}
               title="在新标签页中打开"
             >
@@ -86,7 +86,7 @@ export function MergeView({
             <button
               type="button"
               class="btn btn-primary"
-              disabled={!mergedBlob || busy}
+              disabled={!mergedUrl || busy}
               onClick={save}
             >
               下载 PNG

@@ -1,5 +1,5 @@
 import { useObjectUrl } from '../hooks/useObjectUrl';
-import { downloadBlob, previewBlob } from '../utils/blob';
+import { downloadUrl, previewUrl } from '../utils/blob';
 import { UploadZone } from './UploadZone';
 
 type SplitResult = { a: Blob; b: Blob };
@@ -24,13 +24,13 @@ export function SplitView({
   const urlA = useObjectUrl(splitResult?.a ?? null);
   const urlB = useObjectUrl(splitResult?.b ?? null);
 
-  const save = (blob: Blob, filename: string) => {
-    downloadBlob(blob, filename);
+  const save = (url: string, filename: string) => {
+    downloadUrl(url, filename);
   };
 
-  const preview = (blob: Blob) => {
+  const preview = (url: string) => {
     try {
-      previewBlob(blob);
+      previewUrl(url);
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -77,7 +77,7 @@ export function SplitView({
                     class="btn"
                     disabled={busy}
                     title="在新标签页中打开"
-                    onClick={() => preview(splitResult.a)}
+                    onClick={() => preview(urlA)}
                   >
                     预览
                   </button>
@@ -85,7 +85,7 @@ export function SplitView({
                     type="button"
                     class="btn btn-primary"
                     disabled={busy}
-                    onClick={() => save(splitResult.a, `split-a-${Date.now()}.png`)}
+                    onClick={() => save(urlA, `split-a-${Date.now()}.png`)}
                   >
                     下载 PNG
                   </button>
@@ -105,7 +105,7 @@ export function SplitView({
                     class="btn"
                     disabled={busy}
                     title="在新标签页中打开"
-                    onClick={() => preview(splitResult.b)}
+                    onClick={() => preview(urlB)}
                   >
                     预览
                   </button>
@@ -113,7 +113,7 @@ export function SplitView({
                     type="button"
                     class="btn btn-primary"
                     disabled={busy}
-                    onClick={() => save(splitResult.b, `split-b-${Date.now()}.png`)}
+                    onClick={() => save(urlB, `split-b-${Date.now()}.png`)}
                   >
                     下载 PNG
                   </button>
