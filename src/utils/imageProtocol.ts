@@ -16,5 +16,5 @@ export type WorkerPayload =
 export type WorkerRequest = WorkerPayload & { id: number };
 
 export type WorkerResponse =
-  | { id: number; ok: true; images: ImageBitmap[] }
+  | { id: number; ok: true; blobs: Blob[] }
   | { id: number; ok: false; error: string };

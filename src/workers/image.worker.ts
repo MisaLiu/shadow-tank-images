@@ -6,7 +6,7 @@ const scope = self as unknown as {
   postMessage(message: WorkerResponse, transfer?: Transferable[]): void;
 };
 
-const processRequest = async (request: WorkerRequest): Promise<ImageBitmap[]> => {
+const processRequest = async (request: WorkerRequest): Promise<Blob[]> => {
   if (request.type === 'merge') {
     try {
       return [await runMerge(request.a, request.b, request.settings)];
@@ -28,8 +28,8 @@ scope.onmessage = (event) => {
   const request = event.data;
 
   processRequest(request)
-    .then((images) => {
-      scope.postMessage({ id: request.id, ok: true, images }, images);
+    .then((blobs) => {
+      scope.postMessage({ id: request.id, ok: true, blobs });
     })
     .catch((error: unknown) => {
       scope.postMessage({

@@ -26,7 +26,7 @@ export function App() {
     selectFileA,
     selectFileB,
     selectSource,
-    mergedBitmap,
+    mergedBlob,
     splitResult,
     busy,
     error,
@@ -103,7 +103,7 @@ export function App() {
         <MergeView
           fileA={fileA}
           fileB={fileB}
-          mergedBitmap={mergedBitmap}
+          mergedBlob={mergedBlob}
           busy={busy}
           onSelectA={selectFileA}
           onSelectB={selectFileB}

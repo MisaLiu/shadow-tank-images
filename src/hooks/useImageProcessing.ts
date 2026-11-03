@@ -12,13 +12,13 @@ type Options = {
   splitSettings: SplitSettings;
 };
 
-type SplitResult = { a: ImageBitmap; b: ImageBitmap };
+type SplitResult = { a: Blob; b: Blob };
 
 export const useImageProcessing = ({ mode, mergeSettings, splitSettings }: Options) => {
   const [fileA, setFileA] = useState<File | null>(null);
   const [fileB, setFileB] = useState<File | null>(null);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [mergedBitmap, setMergedBitmap] = useState<ImageBitmap | null>(null);
+  const [mergedBlob, setMergedBlob] = useState<Blob | null>(null);
   const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +40,9 @@ export const useImageProcessing = ({ mode, mergeSettings, splitSettings }: Optio
 
       const timer = setTimeout(() => {
         processMerge(fileA, fileB, mergeSettings)
-          .then((bitmap) => {
-            if (runId !== runSeq.current) {
-              bitmap.close();
-              return;
-            }
-            setMergedBitmap(bitmap);
+          .then((blob) => {
+            if (runId !== runSeq.current) return;
+            setMergedBlob(blob);
           })
           .catch((cause: unknown) => {
             if (runId !== runSeq.current) return;
@@ -72,11 +69,7 @@ export const useImageProcessing = ({ mode, mergeSettings, splitSettings }: Optio
     const timer = setTimeout(() => {
       processSplit(sourceFile, splitSettings)
         .then(({ a, b }) => {
-          if (runId !== runSeq.current) {
-            a.close();
-            b.close();
-            return;
-          }
+          if (runId !== runSeq.current) return;
           setSplitResult({ a, b });
         })
         .catch((cause: unknown) => {
@@ -93,12 +86,12 @@ export const useImageProcessing = ({ mode, mergeSettings, splitSettings }: Optio
 
   const selectFileA = (file: File | null) => {
     setFileA(file);
-    setMergedBitmap(null);
+    setMergedBlob(null);
   };
 
   const selectFileB = (file: File | null) => {
     setFileB(file);
-    setMergedBitmap(null);
+    setMergedBlob(null);
   };
 
   const selectSource = (file: File | null) => {
@@ -113,7 +106,7 @@ export const useImageProcessing = ({ mode, mergeSettings, splitSettings }: Optio
     selectFileA,
     selectFileB,
     selectSource,
-    mergedBitmap,
+    mergedBlob,
     splitResult,
     busy,
     error,

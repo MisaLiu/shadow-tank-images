@@ -94,7 +94,7 @@ export const processMerge = async (
   a: Blob,
   b: Blob,
   settings: MergeSettings,
-): Promise<ImageBitmap> => {
+): Promise<Blob> => {
   const [bitmapA, bitmapB] = await decodePair(a, b);
 
   if (!workerSupported) {
@@ -112,7 +112,7 @@ export const processMerge = async (
       [bitmapA, bitmapB],
     );
 
-    return response.images[0];
+    return response.blobs[0];
   } catch (error) {
     bitmapA.close();
     bitmapB.close();
@@ -123,7 +123,7 @@ export const processMerge = async (
 export const processSplit = async (
   source: Blob,
   settings: SplitSettings,
-): Promise<{ a: ImageBitmap; b: ImageBitmap }> => {
+): Promise<{ a: Blob; b: Blob }> => {
   const bitmap = await createImageBitmap(source);
 
   if (!workerSupported) {
@@ -140,7 +140,7 @@ export const processSplit = async (
       [bitmap],
     );
 
-    return { a: response.images[0], b: response.images[1] };
+    return { a: response.blobs[0], b: response.blobs[1] };
   } catch (error) {
     bitmap.close();
     throw error;

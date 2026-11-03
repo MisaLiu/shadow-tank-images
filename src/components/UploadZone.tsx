@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { toErrorMessage } from '../utils/pipeline';
+import { useObjectUrl } from '../hooks/useObjectUrl';
 
 type Props = {
   label: string;
@@ -17,43 +17,12 @@ const formatSize = (bytes: number): string => {
 
 export function UploadZone({ label, file, onSelect, onError, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dragging, setDragging] = useState(false);
   const [meta, setMeta] = useState<{ width: number; height: number } | null>(null);
+  const thumbUrl = useObjectUrl(file);
 
   useEffect(() => {
-    if (!file) {
-      setMeta(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    createImageBitmap(file)
-      .then((bitmap) => {
-        if (cancelled) {
-          bitmap.close();
-          return;
-        }
-
-        setMeta({ width: bitmap.width, height: bitmap.height });
-
-        const canvas = canvasRef.current;
-        if (canvas) {
-          canvas.width = bitmap.width;
-          canvas.height = bitmap.height;
-          canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
-        }
-
-        bitmap.close();
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) onError(`无法读取图片：${toErrorMessage(error)}`);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    setMeta(null);
   }, [file]);
 
   const acceptFile = (candidate: File | undefined | null) => {
@@ -120,7 +89,19 @@ export function UploadZone({ label, file, onSelect, onError, disabled }: Props) 
       {file ? (
         <div class="upload-zone-body">
           <div class="thumb">
-            <canvas ref={canvasRef} />
+            {thumbUrl && (
+              <img
+                src={thumbUrl}
+                alt=""
+                onLoad={(e) =>
+                  setMeta({
+                    width: e.currentTarget.naturalWidth,
+                    height: e.currentTarget.naturalHeight,
+                  })
+                }
+                onError={() => onError(`无法读取图片：${file.name}`)}
+              />
+            )}
           </div>
           <div class="upload-zone-meta">
             <span class="file-name" title={file.name}>

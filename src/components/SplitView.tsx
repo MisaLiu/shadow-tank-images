@@ -1,9 +1,8 @@
-import { useEffect, useRef } from 'preact/hooks';
-import { downloadPng, drawToCanvas, previewInNewTab } from '../utils/canvas';
-import { toErrorMessage } from '../utils/pipeline';
+import { useObjectUrl } from '../hooks/useObjectUrl';
+import { downloadBlob, previewBlob } from '../utils/blob';
 import { UploadZone } from './UploadZone';
 
-type SplitResult = { a: ImageBitmap; b: ImageBitmap };
+type SplitResult = { a: Blob; b: Blob };
 
 type Props = {
   sourceFile: File | null;
@@ -22,27 +21,18 @@ export function SplitView({
   onForceRun,
   onError,
 }: Props) {
-  const canvasARef = useRef<HTMLCanvasElement>(null);
-  const canvasBRef = useRef<HTMLCanvasElement>(null);
+  const urlA = useObjectUrl(splitResult?.a ?? null);
+  const urlB = useObjectUrl(splitResult?.b ?? null);
 
-  useEffect(() => {
-    drawToCanvas(canvasARef.current, splitResult?.a ?? null);
-    drawToCanvas(canvasBRef.current, splitResult?.b ?? null);
-  }, [splitResult]);
-
-  const save = async (bitmap: ImageBitmap, filename: string) => {
-    try {
-      await downloadPng(bitmap, filename);
-    } catch (cause) {
-      onError(toErrorMessage(cause));
-    }
+  const save = (blob: Blob, filename: string) => {
+    downloadBlob(blob, filename);
   };
 
-  const preview = async (bitmap: ImageBitmap) => {
+  const preview = (blob: Blob) => {
     try {
-      await previewInNewTab(bitmap);
+      previewBlob(blob);
     } catch (cause) {
-      onError(toErrorMessage(cause));
+      onError(cause instanceof Error ? cause.message : String(cause));
     }
   };
 
@@ -76,7 +66,7 @@ export function SplitView({
           </div>
         </div>
 
-        {splitResult ? (
+        {splitResult && urlA && urlB ? (
           <div class="grid-2">
             <figure class="result-card">
               <div class="result-card-head">
@@ -102,7 +92,7 @@ export function SplitView({
                 </div>
               </div>
               <div class="preview">
-                <canvas ref={canvasARef} />
+                <img src={urlA} alt="拆分结果图 A" />
               </div>
             </figure>
 
@@ -130,7 +120,7 @@ export function SplitView({
                 </div>
               </div>
               <div class="preview">
-                <canvas ref={canvasBRef} />
+                <img src={urlB} alt="拆分结果图 B" />
               </div>
             </figure>
           </div>

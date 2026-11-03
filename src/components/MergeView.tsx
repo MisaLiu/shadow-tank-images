@@ -1,12 +1,11 @@
-import { useEffect, useRef } from 'preact/hooks';
-import { downloadPng, drawToCanvas, previewInNewTab } from '../utils/canvas';
-import { toErrorMessage } from '../utils/pipeline';
+import { useObjectUrl } from '../hooks/useObjectUrl';
+import { downloadBlob, previewBlob } from '../utils/blob';
 import { UploadZone } from './UploadZone';
 
 type Props = {
   fileA: File | null;
   fileB: File | null;
-  mergedBitmap: ImageBitmap | null;
+  mergedBlob: Blob | null;
   busy: boolean;
   onSelectA: (file: File | null) => void;
   onSelectB: (file: File | null) => void;
@@ -17,34 +16,26 @@ type Props = {
 export function MergeView({
   fileA,
   fileB,
-  mergedBitmap,
+  mergedBlob,
   busy,
   onSelectA,
   onSelectB,
   onForceRun,
   onError,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mergedUrl = useObjectUrl(mergedBlob);
 
-  useEffect(() => {
-    drawToCanvas(canvasRef.current, mergedBitmap);
-  }, [mergedBitmap]);
-
-  const save = async () => {
-    if (!mergedBitmap) return;
-    try {
-      await downloadPng(mergedBitmap, `merged-${Date.now()}.png`);
-    } catch (cause) {
-      onError(toErrorMessage(cause));
-    }
+  const save = () => {
+    if (!mergedBlob) return;
+    downloadBlob(mergedBlob, `merged-${Date.now()}.png`);
   };
 
-  const preview = async () => {
-    if (!mergedBitmap) return;
+  const preview = () => {
+    if (!mergedBlob) return;
     try {
-      await previewInNewTab(mergedBitmap);
+      previewBlob(mergedBlob);
     } catch (cause) {
-      onError(toErrorMessage(cause));
+      onError(cause instanceof Error ? cause.message : String(cause));
     }
   };
 
@@ -86,7 +77,7 @@ export function MergeView({
             <button
               type="button"
               class="btn"
-              disabled={!mergedBitmap || busy}
+              disabled={!mergedBlob || busy}
               onClick={preview}
               title="在新标签页中打开"
             >
@@ -95,7 +86,7 @@ export function MergeView({
             <button
               type="button"
               class="btn btn-primary"
-              disabled={!mergedBitmap || busy}
+              disabled={!mergedBlob || busy}
               onClick={save}
             >
               下载 PNG
@@ -103,9 +94,9 @@ export function MergeView({
           </div>
         </div>
 
-        {mergedBitmap ? (
+        {mergedUrl ? (
           <div class="preview">
-            <canvas ref={canvasRef} />
+            <img src={mergedUrl} alt="合并结果" />
           </div>
         ) : (
           <div class="placeholder">选择 A、B 两张图片后自动合成</div>

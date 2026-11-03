@@ -67,11 +67,33 @@ export const decodeToImageData = (
   return context.getImageData(0, 0, width, height);
 };
 
+export const encodeToPngBlob = async (imageData: ImageData): Promise<Blob> => {
+  const canvas = createCanvas(imageData.width, imageData.height);
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('无法创建 2D 绘图上下文');
+  }
+
+  context.putImageData(imageData, 0, 0);
+
+  if ('convertToBlob' in canvas) {
+    return canvas.convertToBlob({ type: 'image/png' });
+  }
+
+  return new Promise<Blob>((resolve, reject) => {
+    (canvas as HTMLCanvasElement).toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('PNG 编码失败'))),
+      'image/png',
+    );
+  });
+};
+
 export const runMerge = async (
   imageA: ImageBitmap,
   imageB: ImageBitmap,
   settings: MergeSettings,
-): Promise<ImageBitmap> => {
+): Promise<Blob> => {
   if (imageA.width !== imageB.width || imageA.height !== imageB.height) {
     throw new RangeError(
       `两张图片尺寸不一致（A: ${imageA.width}×${imageA.height}，B: ${imageB.width}×${imageB.height}），请使用相同尺寸的图片`,
@@ -101,13 +123,13 @@ export const runMerge = async (
     settings.offset,
   );
 
-  return createImageBitmap(merged);
+  return encodeToPngBlob(merged);
 };
 
 export const runSplit = async (
   source: ImageBitmap,
   settings: SplitSettings,
-): Promise<{ a: ImageBitmap; b: ImageBitmap }> => {
+): Promise<{ a: Blob; b: Blob }> => {
   const canvas = createCanvas(source.width, source.height);
 
   const data = decodeToImageData(source, canvas);
@@ -121,10 +143,10 @@ export const runSplit = async (
     settings.offset,
   );
 
-  const [bitmapA, bitmapB] = await Promise.all([
-    createImageBitmap(a),
-    createImageBitmap(b),
+  const [blobA, blobB] = await Promise.all([
+    encodeToPngBlob(a),
+    encodeToPngBlob(b),
   ]);
 
-  return { a: bitmapA, b: bitmapB };
+  return { a: blobA, b: blobB };
 };
