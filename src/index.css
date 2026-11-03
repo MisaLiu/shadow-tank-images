@@ -38,6 +38,14 @@ body {
   line-height: 1.6;
 }
 
+a {
+  color: var(--accent);
+}
+
+a:focus {
+  color: var(--accent-strong);
+}
+
 #app {
   min-height: 100vh;
 }

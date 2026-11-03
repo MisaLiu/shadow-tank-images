@@ -123,6 +123,10 @@ export function App() {
 
       <footer class="app-footer">
         <span>处理引擎：{describeWorkerMode()}</span>
+        <span>
+          <a href="https://github.com/MisaLiu/shadow-tank-images" target="_blank">GitHub</a> 
+          ·版本 {__GIT_SHORT_HASH__}
+        </span>
       </footer>
     </div>
   );
