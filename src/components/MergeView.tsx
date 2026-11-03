@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { downloadPng, drawToCanvas } from '../utils/canvas';
+import { downloadPng, drawToCanvas, previewInNewTab } from '../utils/canvas';
 import { toErrorMessage } from '../utils/pipeline';
 import { UploadZone } from './UploadZone';
 
@@ -39,6 +39,15 @@ export function MergeView({
     }
   };
 
+  const preview = async () => {
+    if (!mergedBitmap) return;
+    try {
+      await previewInNewTab(mergedBitmap);
+    } catch (cause) {
+      onError(toErrorMessage(cause));
+    }
+  };
+
   return (
     <>
       <section class="panel">
@@ -73,6 +82,15 @@ export function MergeView({
               onClick={onForceRun}
             >
               重新生成
+            </button>
+            <button
+              type="button"
+              class="btn"
+              disabled={!mergedBitmap || busy}
+              onClick={preview}
+              title="在新标签页中打开"
+            >
+              预览
             </button>
             <button
               type="button"

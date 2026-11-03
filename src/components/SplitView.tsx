@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { downloadPng, drawToCanvas } from '../utils/canvas';
+import { downloadPng, drawToCanvas, previewInNewTab } from '../utils/canvas';
 import { toErrorMessage } from '../utils/pipeline';
 import { UploadZone } from './UploadZone';
 
@@ -38,6 +38,14 @@ export function SplitView({
     }
   };
 
+  const preview = async (bitmap: ImageBitmap) => {
+    try {
+      await previewInNewTab(bitmap);
+    } catch (cause) {
+      onError(toErrorMessage(cause));
+    }
+  };
+
   return (
     <>
       <section class="panel">
@@ -65,35 +73,62 @@ export function SplitView({
             >
               重新生成
             </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              disabled={!splitResult || busy}
-              onClick={() => splitResult && save(splitResult.a, `split-a-${Date.now()}.png`)}
-            >
-              下载 A
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              disabled={!splitResult || busy}
-              onClick={() => splitResult && save(splitResult.b, `split-b-${Date.now()}.png`)}
-            >
-              下载 B
-            </button>
           </div>
         </div>
 
         {splitResult ? (
           <div class="grid-2">
             <figure class="result-card">
-              <figcaption>图 A</figcaption>
+              <div class="result-card-head">
+                <figcaption>图 A</figcaption>
+                <div class="panel-actions">
+                  <button
+                    type="button"
+                    class="btn"
+                    disabled={busy}
+                    title="在新标签页中打开"
+                    onClick={() => preview(splitResult.a)}
+                  >
+                    预览
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    disabled={busy}
+                    onClick={() => save(splitResult.a, `split-a-${Date.now()}.png`)}
+                  >
+                    下载 PNG
+                  </button>
+                </div>
+              </div>
               <div class="preview">
                 <canvas ref={canvasARef} />
               </div>
             </figure>
+
             <figure class="result-card">
-              <figcaption>图 B</figcaption>
+              <div class="result-card-head">
+                <figcaption>图 B</figcaption>
+                <div class="panel-actions">
+                  <button
+                    type="button"
+                    class="btn"
+                    disabled={busy}
+                    title="在新标签页中打开"
+                    onClick={() => preview(splitResult.b)}
+                  >
+                    预览
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    disabled={busy}
+                    onClick={() => save(splitResult.b, `split-b-${Date.now()}.png`)}
+                  >
+                    下载 PNG
+                  </button>
+                </div>
+              </div>
               <div class="preview">
                 <canvas ref={canvasBRef} />
               </div>
