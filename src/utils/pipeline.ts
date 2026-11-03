@@ -6,6 +6,7 @@ export type MergeSettings = {
   aWhiteOpacity: number;
   bBlackOpacity: number;
   offset: 0 | 1;
+  scalePercent: number;
 };
 
 export type SplitSettings = {
@@ -18,6 +19,7 @@ export const DEFAULT_MERGE_SETTINGS: MergeSettings = {
   aWhiteOpacity: 0.25,
   bBlackOpacity: 0.835,
   offset: 0,
+  scalePercent: 100,
 };
 
 export const DEFAULT_SPLIT_SETTINGS: SplitSettings = {
@@ -44,20 +46,25 @@ export const createCanvas = (width: number, height: number): AnyCanvas => {
 export const decodeToImageData = (
   bitmap: ImageBitmap,
   canvas?: AnyCanvas,
+  targetWidth?: number,
+  targetHeight?: number,
 ): ImageData => {
-  const target = canvas ?? createCanvas(bitmap.width, bitmap.height);
+  const width = targetWidth ?? bitmap.width;
+  const height = targetHeight ?? bitmap.height;
 
-  target.width = bitmap.width;
-  target.height = bitmap.height;
+  const target = canvas ?? createCanvas(width, height);
+
+  target.width = width;
+  target.height = height;
 
   const context = target.getContext('2d', { willReadFrequently: true });
   if (!context) {
     throw new Error('无法创建 2D 绘图上下文');
   }
 
-  context.drawImage(bitmap, 0, 0);
+  context.drawImage(bitmap, 0, 0, width, height);
 
-  return context.getImageData(0, 0, target.width, target.height);
+  return context.getImageData(0, 0, width, height);
 };
 
 export const runMerge = async (
@@ -71,16 +78,24 @@ export const runMerge = async (
     );
   }
 
-  const canvas = createCanvas(imageA.width, imageA.height);
+  if (!Number.isFinite(settings.scalePercent) || settings.scalePercent <= 0) {
+    throw new RangeError('缩放比例必须为大于 0 的数值');
+  }
 
-  const dataA = decodeToImageData(imageA, canvas);
-  const dataB = decodeToImageData(imageB, canvas);
+  const factor = settings.scalePercent / 100;
+  const width = Math.max(1, Math.round(imageA.width * factor));
+  const height = Math.max(1, Math.round(imageA.height * factor));
+
+  const canvas = createCanvas(width, height);
+
+  const dataA = decodeToImageData(imageA, canvas, width, height);
+  const dataB = decodeToImageData(imageB, canvas, width, height);
 
   const merged = mergeImagesToCheckerboard(
     dataA.data,
     dataB.data,
-    imageA.width,
-    imageA.height,
+    width,
+    height,
     settings.aWhiteOpacity,
     settings.bBlackOpacity,
     settings.offset,

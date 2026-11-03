@@ -20,10 +20,11 @@ type SliderProps = {
   min: number;
   max: number;
   step: number;
+  format?: (value: number) => string;
   onChange: (value: number) => void;
 };
 
-function Slider({ label, value, min, max, step, onChange }: SliderProps) {
+function Slider({ label, value, min, max, step, format, onChange }: SliderProps) {
   return (
     <label class="slider-row">
       <span class="slider-label">{label}</span>
@@ -35,7 +36,7 @@ function Slider({ label, value, min, max, step, onChange }: SliderProps) {
         value={value}
         onInput={(e) => onChange(Number(e.currentTarget.value))}
       />
-      <span class="slider-value">{value.toFixed(3)}</span>
+      <span class="slider-value">{(format ?? ((v) => v.toFixed(3)))(value)}</span>
     </label>
   );
 }
@@ -113,10 +114,20 @@ export function SettingsPanel({
             value={mergeSettings.offset}
             onChange={(value) => onMergeChange({ offset: value })}
           />
+          <Slider
+            label="缩放比例 scalePercent"
+            value={mergeSettings.scalePercent}
+            min={1}
+            max={100}
+            step={1}
+            format={(value) => `${value}%`}
+            onChange={(value) => onMergeChange({ scalePercent: value })}
+          />
         </div>
 
         <p class="panel-hint">
-          A 与 B 逐像素按棋盘格交错叠加，mask 为 0 的像素取 A，mask 为 1 的像素取 B。
+          A 与 B 逐像素按棋盘格交错叠加，mask 为 0 的像素取 A，mask 为 1 的像素取
+          B；合并前两图按同一比例缩放（保持宽高比）。
         </p>
       </section>
     );
